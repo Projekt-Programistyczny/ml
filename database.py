@@ -19,26 +19,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-def add_offers(list_of_offers) -> None:
-    offers_to_save = []
+def add_category(url, category):
     with SessionLocal() as db:
-        for offer in list_of_offers:
-            offers_to_save.append(ModelRealEstates(url = offer["url"],
-                                    description = offer["description"],
-                                    total_price = offer["total_price"],
-                                    price = offer["price"],
-                                    rent = offer["rent"],
-                                    currency = offer["currency"],
-                                    area = offer["area"],
-                                    rooms = offer["rooms"],
-                                    deposit = offer["deposit"],
-                                    floor = offer["floor"],
-                                    type = offer["type"],
-                                    status = offer["status"],
-                                    region = offer["region"],
-                                    )
-                                )
-        db.add_all(offers_to_save)
+        row = db.query(ModelRealEstates).filter_by(url=url).first()
+        row.category = category
         db.commit()
 
 
@@ -60,3 +44,8 @@ def select_used():
     with SessionLocal() as db:
         links_details = db.query(ModelRealEstates).all()
         return links_details
+
+def select_joined_tables():
+  with SessionLocal() as db:
+    estates = db.query(ModelRealEstates, ModelLink).join(ModelLink, ModelRealEstates.url == ModelLink.url).filter_by(type_of_offer='sprzedaz').all()
+    return estates

@@ -1,23 +1,18 @@
 import pandas as pd
 from sklearn.cluster import KMeans
 from database import *
-# Wczytaj dane z bazy danych
-# Zakładając, że dane są przechowywane w DataFrame o nazwie "df"
-# gdzie każda kolumna odpowiada jednej cechy (url, total_price, rent, area, rooms, floor, type, status, region)
-# df = pd.read_sql_table('real_estates', 'postgresql://postgres:EtronQ72021!@34.127.125.226/real-estate-analyzer')
-df = select_used()
-print(vars(df[1]))
+import matplotlib.pyplot as plt
 
-data = [{'id':obj.id, 'total_price': obj.total_price, 'rent': obj.rent, 'area': obj.area, 'rooms': obj.rooms} for obj in df]
-df = pd.DataFrame(data)#, columns = [ 'id', 'url', 'description', 'total_price', 'price', 'rent', 'currency', 'area', 'rooms', 'deposit', 'floor', 'type', 'status', 'region'])
-# Wybierz interesujące cechy do analizy grupowania
 
-features = ['total_price', 'area', 'rooms']
-# print(df)
-# X = df[features]
-df = df[df['rent'] == 0]
+df = select_joined_tables()
+
+data = [{'url': real_estate.url, 'total_price': real_estate.total_price, 'area': real_estate.area, 'type_of_estate': 1 if link.type_of_estate == 'dom' else 2} for real_estate, link in df]
+df = pd.DataFrame(data)
+
+features = ['total_price', 'area']
+
 df = df[df['total_price'] != -1]
-df = df[df['rooms'] != -1]
+df = df[df['area'] != -1]
 X = df[features]
 
 # Określ liczbę klastrów (grup) do znalezienia
@@ -27,6 +22,12 @@ n_clusters = 3
 kmeans = KMeans(n_clusters=n_clusters)
 kmeans.fit(X)
 
+centroids = kmeans.cluster_centers_
+
+# Wyświetlanie centroid
+for i, centroid in enumerate(centroids):
+    print(f"Centroid {i+1}: {centroid}")
+
 # Przypisz etykiety klastrów do danych
 labels = kmeans.labels_
 
@@ -34,8 +35,11 @@ labels = kmeans.labels_
 df['cluster_label'] = labels
 print(labels)
 # Wyświetl wyniki grupowania
-print(df[['id', 'total_price', 'rent', 'area', 'rooms', 'cluster_label']])
+# print(df[['url', 'total_price', 'area', 'type_of_estate', 'cluster_label']])
 
 
+for index, estate in df.iterrows():
+    add_category(estate.url, estate.cluster_label)
+    print(index)
 
 
